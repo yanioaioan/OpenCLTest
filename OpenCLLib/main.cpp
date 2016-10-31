@@ -2,6 +2,9 @@
 #include "cl.hpp"
 #include <chrono>
 
+//http://cims.nyu.edu/~schlacht/OpenCLModel.pdf
+//http://downloads.ti.com/mctools/esd/docs/opencl/execution/kernels-workgroups-workitems.html
+
 int main (void)
 {
     //Platform
@@ -54,16 +57,16 @@ int main (void)
 
 
     //Create buffers on device for A,B,C arrays
-    cl::Buffer buffer_A(context,CL_MEM_READ_WRITE,sizeof(int)*1000000);
-    cl::Buffer buffer_B(context,CL_MEM_READ_WRITE,sizeof(int)*1000000);
-    cl::Buffer buffer_C(context,CL_MEM_READ_WRITE,sizeof(int)*1000000);
+    cl::Buffer buffer_A(context,CL_MEM_READ_WRITE,sizeof(int)*100000000);
+    cl::Buffer buffer_B(context,CL_MEM_READ_WRITE,sizeof(int)*100000000);
+    cl::Buffer buffer_C(context,CL_MEM_READ_WRITE,sizeof(int)*100000000);
 
-    int *A = new int[1000000];//{1,1,1,1,1,1,1,1,1,1};
+    int *A = new int[100000000];//{1,1,1,1,1,1,1,1,1,1};
 
-    int *B = new int[1000000];//{0,1,2,3,4,5,6,7,8,9};
+    int *B = new int[100000000];//{0,1,2,3,4,5,6,7,8,9};
 
     //fill the 2 arrays with data
-    for (int i=0;i<1000000;i++)
+    for (int i=0;i<100000000;i++)
     {
         A[i]=i;
         B[i]=i+1;
@@ -73,20 +76,20 @@ int main (void)
     cl::CommandQueue queue(context,default_device);
 
     //write/copy arrays A and B to the device
-    queue.enqueueWriteBuffer(buffer_A,CL_TRUE,0,sizeof(int)*1000000,A);
-    queue.enqueueWriteBuffer(buffer_B,CL_TRUE,0,sizeof(int)*1000000,B);
+    queue.enqueueWriteBuffer(buffer_A,CL_TRUE,0,sizeof(int)*100000000,A);
+    queue.enqueueWriteBuffer(buffer_B,CL_TRUE,0,sizeof(int)*100000000,B);
 
     //run the kernel
-    cl::KernelFunctor simple_add(cl::Kernel(program,"simple_addFunction"),queue,cl::NullRange,cl::NDRange(1000),cl::NullRange);
+    cl::KernelFunctor simple_add(cl::Kernel(program,"simple_addFunction"),queue,cl::NullRange,cl::NDRange(1562500),64);
     simple_add(buffer_A,buffer_B,buffer_C);
 
-    int *C = new int[1000000];
+    int *C = new int[100000000];
     //    int C[10];
 
 
     //traditional - non-parallel way of computing the sum
     auto start = std::chrono::system_clock::now();
-    for (int i=0;i<1000000;i++)
+    for (int i=0;i<100000000;i++)
     {
         C[i]=A[i]+B[i+1];
     }
@@ -95,21 +98,24 @@ int main (void)
     auto elapsed = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
     std::cout <<"No OpenCL: time elapsed:"<< elapsed.count() << " microseconds" << '\n';
 
+    auto noOpenCLSaved=elapsed;
+
 
     //print memory C on our Device and transfer back to Host
 
     start = std::chrono::system_clock::now();
     /* do some work */
-        queue.enqueueReadBuffer(buffer_C,CL_TRUE,0,sizeof(int)*1000000,C);
+        queue.enqueueReadBuffer(buffer_C,CL_TRUE,0,sizeof(int)*100000000,C);
 
     end = std::chrono::system_clock::now();
     // this constructs a duration object using milliseconds
     elapsed = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
     std::cout <<"OpenCL: time elapsed:"<< elapsed.count() << " microseconds" << '\n';
 
+    std::cout<<"OpenCL is "<< std::chrono::duration<double>(noOpenCLSaved)/elapsed <<" times faster than NO OpenCL"<<'\n';
 
     std::cout<<"  result: \n";
-    for(int i=0;i<1000000;i++)
+    for(int i=0;i<100000000;i++)
     {
         //std::cout<<"A["<<i<<"] +"<<" B["<<i+1<<"] = "<<C[i]<<" \n";
     }
