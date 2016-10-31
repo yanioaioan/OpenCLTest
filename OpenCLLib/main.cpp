@@ -111,7 +111,7 @@ int main (void)
     std::cout<<"  result: \n";
     for(int i=0;i<1000000;i++)
     {
-//        std::cout<<"A["<<i<<"] +"<<" B["<<i+1<<"] = "<<C[i]<<" \n";
+        //std::cout<<"A["<<i<<"] +"<<" B["<<i+1<<"] = "<<C[i]<<" \n";
     }
 
     delete A;
